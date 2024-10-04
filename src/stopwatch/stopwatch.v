@@ -21,8 +21,6 @@ module stopwatch(i_clk, i_start, i_stop, o_data);
 
     initial running = 0;
 
-    assign o_data = counter;
-
     always @(posedge i_clk)
     begin
         if ((i_start == 1) || (i_stop == 1))
@@ -47,8 +45,11 @@ module stopwatch(i_clk, i_start, i_stop, o_data);
             debounce_state <= 0;
             debounce_counter <= 0;
         end
-
-        if (running == 1) counter <= counter + 1'b1;
     end
+
+    assign o_data = counter;
+
+    always @(posedge i_clk)
+        if (running == 1) counter <= counter + 1'b1;
 
 endmodule
