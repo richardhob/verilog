@@ -1,0 +1,13 @@
+[options]
+mode prove
+
+[engines]
+smtbmc
+
+[script]
+read -formal shift.v
+# .. other files would got here
+prep -top shift
+
+[files]
+shift.v
