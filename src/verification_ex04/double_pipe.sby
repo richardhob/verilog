@@ -1,0 +1,15 @@
+[options]
+mode prove
+
+[engines]
+smtbmc
+
+[script]
+read -formal double_pipe.v
+read -formal linear_feedback_shift.v
+prep -top double_pipe
+opt_merge -share_all
+
+[files]
+double_pipe.v
+linear_feedback_shift.v
