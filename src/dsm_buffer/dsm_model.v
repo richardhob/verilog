@@ -69,7 +69,7 @@ module dsm_model(
 );
 
 parameter MOD_BITS = 4; // Modulator Bits
-parameter SAMPLES  = 256; // 
+parameter SAMPLES  = 16; // 
 
 localparam BUFFER_SIZE = (SAMPLES - 1);
 localparam MOD_BITS_MSB = MOD_BITS - 1;
@@ -82,28 +82,45 @@ reg [MOD_BITS_MSB:0] buffer [0:BUFFER_SIZE];
 `ifndef TB
 
 reg [POINTER_BITS:0] save_index;
+initial save_index = 0;
+
 reg [POINTER_BITS:0] read_index;
+initial read_index = 0;
 
 `endif
 
 assign internal_bit = dsm_out;
 
+reg external_reset_occurred;
+initial external_reset_occurred = 0;
+
+always @(posedge external_rst_n)
+begin
+    external_reset_occurred = 1;
+end
+
+reg internal_reset_occurred;
+initial internal_reset_occurred = 0;
+
+always @(posedge internal_rst_n)
+begin
+    internal_reset_occurred = 1;
+end
+
 // Save Index 
 always @(posedge external_clk)
 begin
-    if (external_rst_n == 0) save_index = 0;
-
-    /* verilator lint_off WIDTH */
-    else if (save_index < BUFFER_SIZE) 
-        save_index = save_index + 1;
-    /* verilator lint_on WIDTH */
+    if (external_reset_occurred == 1)
+        /* verilator lint_off WIDTH */
+        if (save_index < BUFFER_SIZE) 
+            save_index = save_index + 1;
+        /* verilator lint_on WIDTH */
 end
 
 // Read Index
 always @(posedge internal_clk)
 begin
-    if (internal_rst_n == 0) read_index = 0;
-    else 
+    if (internal_reset_occurred == 1)
         if (read_index + 1 < save_index)
             read_index = read_index + 1;
         else read_index = 0;
@@ -140,30 +157,24 @@ end
 
 always @(posedge external_clk)
 begin
-    assume(internal_rst_n == 1);
-    assume(external_rst_n == 1);
-
-    if ($past(internal_clk) == 1)
-        assert(save_index > 0);
+    if ($past(external_reset_occurred))
+        if (external_clk == 1)
+            assert(save_index > 0);
 end
 
 always @(posedge internal_clk)
 begin
-    assume(internal_rst_n == 1);
-    assume(external_rst_n == 1);
-    assume(save_index > 0);
-
-    assert(save_index > read_index);
+    if ($past(internal_reset_occurred) == 1)
+        if ($past(save_index) > 0)
+            if (internal_clk == 1)
+                assert(save_index > read_index);
 end
 
 always @(*)
 begin
-    assume(internal_rst_n == 1);
-    assume(external_rst_n == 1);
-
-    assume(save_index > read_index);
-
-    assert(read_error == 0);
+    if (internal_reset_occurred && external_reset_occurred)
+        if (save_index > 0)
+            assert(read_error == 0);
 end
 
 `endif
