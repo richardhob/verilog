@@ -1,0 +1,14 @@
+[options]
+mode bmc
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+read -formal dsm_model.v
+prep -top dsm_model
+opt_merge -share_all
+
+[files]
+dsm_model.v
